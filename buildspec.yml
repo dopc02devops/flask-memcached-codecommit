@@ -20,7 +20,7 @@ phases:
       # Create and activate a virtual environment
       - echo "Creating and activating virtual environment"
       - python -m venv venv
-      - . venv/bin/activate  # Use `.` to activate the virtual environment in a script
+      - . venv/bin/activate  # Correct way to activate in non-interactive shell
 
       # Install Python dependencies from requirements.txt with no cache
       - echo Installing Python dependencies from requirements.txt
@@ -28,7 +28,8 @@ phases:
 
       # Check if Docker is installed
       - echo "Checking if Docker is installed"
-      - if ! command -v docker &> /dev/null; then
+      - |
+        if ! command -v docker &> /dev/null; then
           echo "Docker not found, installing Docker...";
           curl -fsSL https://get.docker.com -o get-docker.sh;
           sudo sh get-docker.sh;
@@ -38,7 +39,8 @@ phases:
 
       # Check if Docker Compose is installed
       - echo "Checking if Docker Compose is installed"
-      - if ! command -v docker-compose &> /dev/null; then
+      - |
+        if ! command -v docker-compose &> /dev/null; then
           echo "Docker Compose not found, installing Docker Compose...";
           DOCKER_COMPOSE_VERSION="2.32.4";  # Adjust version if needed
           curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose;
@@ -74,7 +76,7 @@ phases:
       - echo Running tests using Docker Compose
       - docker-compose -f docker-compose.test.yml up --build test-app || exit 1
 
-      # Copy Test Reports from container
+      # Copy Test Reports from container to local environment
       - echo Copying test reports from container to local environment
       - mkdir -p reports-xml
       - mkdir -p reports-html
