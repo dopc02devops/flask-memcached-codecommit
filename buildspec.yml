@@ -13,9 +13,13 @@ phases:
       - echo Upgrading pip and setuptools
       - python -m pip install --upgrade pip setuptools wheel
 
-      # Install Python dependencies from requirements.txt
+      # Clear pip cache to simulate cache expiration after a short time
+      - echo "Clearing pip cache"
+      - pip cache purge
+
+      # Install Python dependencies from requirements.txt with no cache
       - echo Installing Python dependencies from requirements.txt
-      - pip install -r requirements.txt
+      - pip install --no-cache-dir -r requirements.txt
 
       # Install Docker
       - echo Installing Docker
@@ -29,7 +33,7 @@ phases:
       - curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
       - sudo chmod +x /usr/local/bin/docker-compose
 
-      # Install pytest-html
+      # Install pytest-html for test reporting
       - echo Installing pytest-html
       - pip install pytest-html
 
@@ -71,3 +75,13 @@ phases:
       - docker volume ls -q | xargs -r docker volume rm
 
       - echo Post build phase completed
+
+artifacts:
+  files:
+    - '**/*'
+  discard-paths: yes
+  base-directory: reports-html  # Change this to the folder where the HTML test reports are stored
+
+cache:
+  paths:
+    - '/root/.cache/pip/**/*'  # Cache pip dependencies directory to avoid reinstalling on every build
