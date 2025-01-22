@@ -13,7 +13,7 @@ phases:
       - echo "Upgrading pip, setuptools, and wheel"
       - python -m pip install --upgrade pip setuptools wheel
 
-      # # Clear pip cache manually
+      # Clear pip cache manually (uncomment if you want a fresh start)
       # - echo "Clearing pip cache"
       # - rm -rf /root/.cache/pip
 
@@ -22,7 +22,7 @@ phases:
       - python -m venv venv
       - . venv/bin/activate  # Activate virtual environment
 
-      # Install Python dependencies
+      # Install Python dependencies from requirements.txt
       - echo "Installing Python dependencies from requirements.txt"
       - pip install -r requirements.txt
 
@@ -100,7 +100,7 @@ phases:
       - echo "Merging report directories into one for artifacts"
       - mkdir -p merged-reports
 
-       # Copy test reports from containers
+      # Copy test reports from containers
       - docker cp flask-tests-container:/app/report.xml ./report.xml
       - docker cp flask-tests-container:/app/report.html ./report.html
 
@@ -111,10 +111,11 @@ phases:
 
 artifacts:
   files:
-    - '**/*'
+    - report.xml
+    - report.html
   discard-paths: no
-  base-directory: merged-reports
 
 cache:
   paths:
     - '/root/.cache/pip/**/*'
+    - 'venv/**/*' 
