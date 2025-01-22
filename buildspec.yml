@@ -25,7 +25,7 @@ phases:
       - echo Installing pytest-html
       - pip install pytest-html
 
-  build-image:
+  build:
     commands:
       # Build Docker Image (latest and versioned tag)
       - echo Building Docker image (latest and versioned)
@@ -34,14 +34,10 @@ phases:
       - IMAGE_TAG=$DOCKER_USERNAME/python-memcached:$CODEBUILD_RESOLVED_SOURCE_VERSION  # Or use $GITHUB_SHA for GitHub builds
       - docker build -t $DOCKER_USERNAME/python-memcached:latest -t $IMAGE_TAG -f ./Dockerfile.app .
 
-  scan-file:
-    commands:
       # Run Docker Scan on the Dockerfile
       - echo Scanning Dockerfile for vulnerabilities
       - docker scan --file ./src/Dockerfile.app
 
-  test:
-    commands:
       # Run tests using Docker Compose
       - echo Running tests using Docker Compose
       - docker-compose -f docker-compose.test.yml up --build test-app || exit 1
