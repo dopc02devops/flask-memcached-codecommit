@@ -9,13 +9,13 @@ phases:
       - echo "Using Python version:"
       - python --version
 
-      # Upgrade pip and related tools
+      # Upgrade pip to version >= 20.1 (required for pip cache commands)
       - echo Upgrading pip and setuptools
       - python -m pip install --upgrade pip setuptools wheel
 
-      # Clear pip cache to simulate cache expiration after a short time
+      # Clear pip cache manually if 'pip cache purge' doesn't work
       - echo "Clearing pip cache"
-      - pip cache purge
+      - rm -rf /root/.cache/pip
 
       # Install Python dependencies from requirements.txt with no cache
       - echo Installing Python dependencies from requirements.txt
