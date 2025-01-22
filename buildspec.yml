@@ -17,9 +17,17 @@ phases:
       - echo "Clearing pip cache"
       - rm -rf /root/.cache/pip
 
-      # Install Python dependencies from requirements.txt with no cache
+      # Add pip wheel for 'blinker==1.9.0' specifically
+      - echo "Building wheel for blinker==1.9.0"
+      - pip wheel blinker==1.9.0
+
+      # Install blinker==1.9.0 directly using the wheel
+      - echo "Installing blinker==1.9.0 from the built wheel"
+      - pip install blinker==1.9.0
+
+       # Install Python dependencies from requirements.txt with no cache
       - echo Installing Python dependencies from requirements.txt
-      - pip install --no-cache-dir -r requirements.txt
+      - pip install -r requirements.txt
 
       # Install Docker
       - echo Installing Docker
