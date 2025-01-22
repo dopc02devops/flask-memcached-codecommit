@@ -20,7 +20,7 @@ phases:
       # Create and activate a virtual environment
       - echo "Creating and activating virtual environment"
       - python -m venv venv
-      - source venv/bin/activate
+      - . venv/bin/activate  # Use `.` to activate the virtual environment in a script
 
       # Install Python dependencies from requirements.txt with no cache
       - echo Installing Python dependencies from requirements.txt
