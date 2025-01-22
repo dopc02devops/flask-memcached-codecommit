@@ -104,11 +104,8 @@ phases:
       - docker cp flask-tests-container:/app/report.xml ./merged-reports/report.xml
       - docker cp flask-tests-container:/app/report.html ./merged-reports/report.html
 
-      - echo "Listing generated files:"
-      - ls -R
-
-      # Clean up Docker resources
-      - echo "Cleaning up Docker resources"
+      - echo "Listing generated files in merged-reports:"
+      - ls -la merged-reports/
 
 artifacts:
   files:
