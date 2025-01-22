@@ -61,16 +61,17 @@ phases:
 
   build:
     commands:
+
+      # Run Docker Scan on the Dockerfile
+      - echo Scanning Dockerfile for vulnerabilities
+      - docker scan --file ./src/Dockerfile.app
+
       # Build Docker Image (latest and versioned tag)
       - echo "Building Docker image (latest and versioned)"
       - set -e
       - pwd
       - IMAGE_TAG=$DOCKER_USERNAME/python-memcached:$CODEBUILD_RESOLVED_SOURCE_VERSION  # Or use $GITHUB_SHA for GitHub builds
-      - docker build -t $DOCKER_USERNAME/python-memcached:latest -t $IMAGE_TAG -f ./src/Dockerfile.app
-
-      # Run Docker Scan on the Dockerfile
-      - echo Scanning Dockerfile for vulnerabilities
-      - docker scan --file ./src/Dockerfile.app
+      - docker build -t $DOCKER_USERNAME/python-memcached:latest -t $IMAGE_TAG -f ./src/Dockerfile.app .
 
       # Run tests using Docker Compose
       - echo Running tests using Docker Compose
