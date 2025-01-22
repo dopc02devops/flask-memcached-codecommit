@@ -66,9 +66,9 @@ phases:
       - export DOCKER_USERNAME=$(aws secretsmanager get-secret-value --secret-id "secret-name" --query "SecretString" --output text | jq -r .DOCKER_USERNAME)
       - export DOCKER_PASSWORD=$(aws secretsmanager get-secret-value --secret-id "secret-name" --query "SecretString" --output text | jq -r .DOCKER_PASSWORD)
 
-      # Login to Docker Hub
-      - echo "Logging into Docker Hub"
-      - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+      # Log in to Docker (use --password-stdin to avoid interactive login)
+      - echo "Logging in to Docker Hub"
+      - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
 
       # Build Docker Image (latest and versioned tag)
       - echo "Building Docker image (latest and versioned)"
@@ -98,18 +98,12 @@ phases:
 
   post_build:
     commands:
-      # Clean up Docker resources after build
-      - echo Cleaning up Docker resources
-
-      # Remove containers, images, and volumes
-      - echo Stopping and removing all running containers
+      # Clean up Docker resources and exit
+      - echo "Cleaning up Docker resources and exiting build"
       - docker ps -q | xargs -r docker stop | xargs -r docker rm
-      - echo Removing all Docker images
       - docker images -q | xargs -r docker rmi -f
-      - echo Removing all Docker volumes
       - docker volume ls -q | xargs -r docker volume rm
-
-      - echo Post build phase completed
+      - exit 0  # Ensure to exit successfully and stop the build
 
 artifacts:
   files:
