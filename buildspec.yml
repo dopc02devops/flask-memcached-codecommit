@@ -3,8 +3,13 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      python: 3.x  # Specify the Python version (e.g., 3.8 or 3.9)
+      python: 3.8  # Use a supported Python version
     commands:
+      # Upgrade pip and related tools
+      - echo Upgrading pip and setuptools
+      - python -m ensurepip --upgrade
+      - pip install --upgrade pip setuptools wheel
+
       # Install Python dependencies from requirements.txt
       - echo Installing Python dependencies from requirements.txt
       - pip install -r requirements.txt
@@ -17,7 +22,7 @@ phases:
 
       # Install Docker Compose
       - echo Installing Docker Compose
-      - DOCKER_COMPOSE_VERSION="1.29.2"  # Adjust version if needed
+      - DOCKER_COMPOSE_VERSION="2.32.4"  # Adjust version if needed
       - curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
       - sudo chmod +x /usr/local/bin/docker-compose
 
