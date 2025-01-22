@@ -99,10 +99,10 @@ phases:
     commands:
       - echo "Merging report directories into one for artifacts"
       - mkdir -p merged-reports
-      
+
        # Copy test reports from containers
-      - docker cp -r flask-tests-container:/app/report.xml ./merged-reports/report.xml
-      - docker cp -r flask-tests-container:/app/report.html ./merged-reports/report.html
+      - docker cp flask-tests-container:/app/report.xml ./merged-reports/report.xml
+      - docker cp flask-tests-container:/app/report.html ./merged-reports/report.html
 
       - echo "Listing generated files:"
       - ls -R
