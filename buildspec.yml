@@ -17,6 +17,11 @@ phases:
       - echo "Clearing pip cache"
       - rm -rf /root/.cache/pip
 
+      # Create and activate a virtual environment
+      - echo "Creating and activating virtual environment"
+      - python -m venv venv
+      - source venv/bin/activate
+
       # Install Python dependencies from requirements.txt with no cache
       - echo Installing Python dependencies from requirements.txt
       - pip install -r requirements.txt
@@ -25,7 +30,16 @@ phases:
       - echo Installing Docker
       - curl -fsSL https://get.docker.com -o get-docker.sh
       - sudo sh get-docker.sh
-      - sudo usermod -aG docker $USER
+
+      # Add the correct user to the docker group based on the OS
+      - echo "Adding the correct user to the docker group"
+      - if [ -f /etc/os-release ] && grep -q "Ubuntu" /etc/os-release; then
+          sudo usermod -aG docker ubuntu;
+        elif [ -f /etc/os-release ] && grep -q "Amazon" /etc/os-release; then
+          sudo usermod -aG docker ec2-user;
+        else
+          echo "OS not recognized, skipping user addition to docker group.";
+        fi
 
       # Install Docker Compose
       - echo Installing Docker Compose
