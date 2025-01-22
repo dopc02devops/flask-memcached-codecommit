@@ -76,9 +76,11 @@ phases:
       - docker build -t $IMAGE_TAG -f ./src/Dockerfile.app .
 
       # Scan Docker image for vulnerabilities
-      - echo "Scanning the Docker image"
-      - docker scan $IMAGE_TAG
-
+      - echo "Installing Trivy for Docker image scanning"
+      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+      - echo "Scanning the Docker image for vulnerabilities using Trivy"
+      - trivy image $IMAGE_TAG
+      
       # Push the image to Docker Hub
       - echo "Pushing Docker image to Docker Hub"
       - docker push $IMAGE_TAG
