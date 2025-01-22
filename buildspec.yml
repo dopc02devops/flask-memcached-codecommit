@@ -83,7 +83,7 @@ phases:
       - echo "Adding Trivy to PATH"
       - export PATH=$PATH:$(pwd)/bin 
       - echo "Scanning the Docker image for vulnerabilities using Trivy"
-      - trivy image $IMAGE_TAG
+      - trivy image --severity CRITICAL,HIGH $IMAGE_TAG
 
       # Push the image to Docker Hub
       - echo "Pushing Docker image to Docker Hub"
@@ -104,6 +104,10 @@ phases:
 
   post_build:
     commands:
+      - echo "Merging report directories into one for artifacts"
+      - mkdir -p merged-reports
+      - cp -r reports-html/* merged-reports/
+      - cp -r reports-xml/* merged-reports/
       # Clean up Docker resources
       - echo "Cleaning up Docker resources"
 
@@ -111,15 +115,8 @@ artifacts:
   files:
     - '**/*'
   discard-paths: yes
-  base-directory: reports-html  # HTML test reports directory
-
-secondary-artifacts:
-  reports-xml:
-    files:
-      - '**/*'
-    discard-paths: yes
-    base-directory: reports-xml  # The base directory for XML reports
+  base-directory: merged-reports
 
 cache:
   paths:
-    - '/root/.cache/pip/**/*'  # Cache pip dependencies to speed up builds
+    - '/root/.cache/pip/**/*'
