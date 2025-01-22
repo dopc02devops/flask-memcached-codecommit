@@ -9,76 +9,74 @@ phases:
       - echo "Using Python version:"
       - python --version
 
-      # Upgrade pip to version >= 20.1 (required for pip cache commands)
-      - echo Upgrading pip and setuptools
+      # Upgrade pip, setuptools, and wheel
+      - echo "Upgrading pip, setuptools, and wheel"
       - python -m pip install --upgrade pip setuptools wheel
 
-      # Clear pip cache manually if 'pip cache purge' doesn't work
-      - echo "Clearing pip cache"
-      - rm -rf /root/.cache/pip
+      # # Clear pip cache manually
+      # - echo "Clearing pip cache"
+      # - rm -rf /root/.cache/pip
 
       # Create and activate a virtual environment
       - echo "Creating and activating virtual environment"
       - python -m venv venv
-      - . venv/bin/activate  # Correct way to activate in non-interactive shell
+      - source venv/bin/activate  # Activate virtual environment
 
-      # Install Python dependencies from requirements.txt with no cache
-      - echo Installing Python dependencies from requirements.txt
+      # Install Python dependencies
+      - echo "Installing Python dependencies from requirements.txt"
       - pip install -r requirements.txt
 
-      # Check if Docker is installed
+      # Ensure Docker is installed
       - echo "Checking if Docker is installed"
       - |
         if ! command -v docker &> /dev/null; then
           echo "Docker not found, installing Docker...";
           curl -fsSL https://get.docker.com -o get-docker.sh;
-          sudo sh get-docker.sh;
+          sh get-docker.sh;
         else
           echo "Docker is already installed";
         fi
 
-      # Check if Docker Compose is installed
+      # Ensure Docker Compose is installed
       - echo "Checking if Docker Compose is installed"
       - |
         if ! command -v docker-compose &> /dev/null; then
           echo "Docker Compose not found, installing Docker Compose...";
-          DOCKER_COMPOSE_VERSION="2.32.4";  # Adjust version if needed
+          DOCKER_COMPOSE_VERSION="2.32.4";
           curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose;
-          sudo chmod +x /usr/local/bin/docker-compose;
+          chmod +x /usr/local/bin/docker-compose;
         else
           echo "Docker Compose is already installed";
         fi
 
-      # Add the correct user to the docker group based on the OS
+      # Add current user to the Docker group
       - echo "Adding the correct user to the docker group"
-      - CURRENT_USER=$(whoami)  # Dynamically get the current user
-      - echo "Adding $CURRENT_USER to the docker group"
+      - CURRENT_USER=$(whoami)
       - sudo usermod -aG docker $CURRENT_USER
 
       # Install pytest-html for test reporting
-      - echo Installing pytest-html
+      - echo "Installing pytest-html"
       - pip install pytest-html
 
   build:
     commands:
       # Retrieve Docker credentials from Secrets Manager
       - echo "Retrieving Docker credentials from Secrets Manager"
-      - export DOCKER_USERNAME=$(aws secretsmanager get-secret-value --secret-id "secret-name" --query "SecretString" --output text | jq -r .DOCKER_USERNAME)
-      - export DOCKER_PASSWORD=$(aws secretsmanager get-secret-value --secret-id "secret-name" --query "SecretString" --output text | jq -r .DOCKER_PASSWORD)
+      - export DOCKER_CREDS=$(aws secretsmanager get-secret-value --secret-id "docker-credentials" --query "SecretString" --output text)
+      - export DOCKER_USERNAME=$(echo $DOCKER_CREDS | jq -r .DOCKER_USERNAME)
+      - export DOCKER_PASSWORD=$(echo $DOCKER_CREDS | jq -r .DOCKER_PASSWORD)
 
-      # Log in to Docker (use --password-stdin to avoid interactive login)
+      # Log in to Docker
       - echo "Logging in to Docker Hub"
       - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
 
-      # Build Docker Image (latest and versioned tag)
-      - echo "Building Docker image (latest and versioned)"
-      - set -e
-      - pwd
-      - IMAGE_TAG=$DOCKER_USERNAME/python-memcached:$CODEBUILD_RESOLVED_SOURCE_VERSION  # Versioned tag based on the commit hash or source version
+      # Build Docker image with versioned tag
+      - echo "Building Docker image"
+      - IMAGE_TAG=$DOCKER_USERNAME/python-memcached:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - docker build -t $IMAGE_TAG -f ./src/Dockerfile.app .
 
-      # Run Docker Scan on the built image
-      - echo "Scanning the Docker image for vulnerabilities"
+      # Scan Docker image for vulnerabilities
+      - echo "Scanning the Docker image"
       - docker scan $IMAGE_TAG
 
       # Push the image to Docker Hub
@@ -86,11 +84,11 @@ phases:
       - docker push $IMAGE_TAG
 
       # Run tests using Docker Compose
-      - echo "Running tests using Docker Compose"
+      - echo "Running tests with Docker Compose"
       - docker-compose -f docker-compose.test.yml up --build test-app || exit 1
 
-      # Copy Test Reports from container to local environment
-      - echo "Copying test reports from container to local environment"
+      # Copy test reports from containers
+      - echo "Copying test reports from containers"
       - mkdir -p reports-xml
       - mkdir -p reports-html
       - docker cp flask-tests-container:/app/report.xml ./reports-xml/report.xml
@@ -98,19 +96,19 @@ phases:
 
   post_build:
     commands:
-      # Clean up Docker resources and exit
-      - echo "Cleaning up Docker resources and exiting build"
+      # Clean up Docker resources
+      - echo "Cleaning up Docker resources"
       - docker ps -q | xargs -r docker stop | xargs -r docker rm
       - docker images -q | xargs -r docker rmi -f
       - docker volume ls -q | xargs -r docker volume rm
-      - exit 0  # Ensure to exit successfully and stop the build
+      - exit 0
 
 artifacts:
   files:
     - '**/*'
   discard-paths: yes
-  base-directory: reports-html  # Change this to the folder where the HTML test reports are stored
+  base-directory: reports-html  # HTML test reports directory
 
 cache:
   paths:
-    - '/root/.cache/pip/**/*'  # Cache pip dependencies directory to avoid reinstalling on every build
+    - '/root/.cache/pip/**/*'  # Cache pip dependencies to speed up builds
