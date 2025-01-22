@@ -3,11 +3,15 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      python: 3.8  # Use a supported Python version
+      python: 3.8  # Ensure a modern Python version
     commands:
-      # Upgrade pip and related tools
+      # Install pip directly
+      - echo Installing pip directly using get-pip.py
+      - curl -O https://bootstrap.pypa.io/get-pip.py
+      - python get-pip.py
+
+      # Upgrade pip and setuptools
       - echo Upgrading pip and setuptools
-      - python -m ensurepip --upgrade
       - pip install --upgrade pip setuptools wheel
 
       # Install Python dependencies from requirements.txt
