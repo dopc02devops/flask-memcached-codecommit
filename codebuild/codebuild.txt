@@ -5,6 +5,14 @@ add policy
     - AWSCodeBuildAdminAccess
 create role 
     - codebuild-role
+    AWSCodeBuildDeveloperAccess
+    CloudWatchFullAccess
+    SecretsManagerReadWrite
+    
+aws secretsmanager create-secret \
+    --name "docker-credentials" \
+    --description "Docker Hub credentials" \
+    --secret-string '{"DOCKER_USERNAME":"your_docker_username","DOCKER_PASSWORD":"your_docker_password"}'
 
 aws codebuild create-project \
     --name flask-memcached-Project \
