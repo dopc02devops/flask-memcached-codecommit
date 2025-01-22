@@ -31,15 +31,18 @@ phases:
       - curl -fsSL https://get.docker.com -o get-docker.sh
       - sudo sh get-docker.sh
 
+      # Set up Docker in rootless mode
+      - echo "Setting up Docker in rootless mode"
+      - curl -fsSL https://get.docker.com/rootless | sh
+      - dockerd-rootless-setuptool.sh install
+      - export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+      - export PATH=$PATH:/home/$(whoami)/bin
+
       # Add the correct user to the docker group based on the OS
       - echo "Adding the correct user to the docker group"
-      - if [ -f /etc/os-release ] && grep -q "Ubuntu" /etc/os-release; then
-          sudo usermod -aG docker ubuntu;
-        elif [ -f /etc/os-release ] && grep -q "Amazon" /etc/os-release; then
-          sudo usermod -aG docker ec2-user;
-        else
-          echo "OS not recognized, skipping user addition to docker group.";
-        fi
+      - CURRENT_USER=$(whoami)  # Dynamically get the current user
+      - echo "Adding $CURRENT_USER to the docker group"
+      - sudo usermod -aG docker $CURRENT_USER
 
       # Install Docker Compose
       - echo Installing Docker Compose
