@@ -78,9 +78,11 @@ phases:
       # Scan Docker image for vulnerabilities
       - echo "Installing Trivy for Docker image scanning"
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+      - echo "Adding Trivy to PATH"
+      - export PATH=$PATH:$(pwd)/bin 
       - echo "Scanning the Docker image for vulnerabilities using Trivy"
       - trivy image $IMAGE_TAG
-      
+
       # Push the image to Docker Hub
       - echo "Pushing Docker image to Docker Hub"
       - docker push $IMAGE_TAG
