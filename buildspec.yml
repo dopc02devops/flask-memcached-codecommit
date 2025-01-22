@@ -101,11 +101,13 @@ phases:
       - mkdir -p merged-reports
 
        # Copy test reports from containers
-      - docker cp flask-tests-container:/app/report.xml ./merged-reports/report.xml
-      - docker cp flask-tests-container:/app/report.html ./merged-reports/report.html
+      - docker cp flask-tests-container:/app/report.xml ./report.xml
+      - docker cp flask-tests-container:/app/report.html ./report.html
 
       - echo "Listing generated files in merged-reports:"
-      - ls -la merged-reports/
+      - find . -type f \( -iname "*.xml" -o -iname "*.html" \)
+      # Debugging directory existence
+      - if [ -d "merged-reports" ]; then echo "merged-reports directory exists"; else echo "merged-reports directory not found"; fi
 
 artifacts:
   files:
