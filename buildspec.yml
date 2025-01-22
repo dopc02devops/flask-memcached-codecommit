@@ -90,6 +90,8 @@ phases:
       - docker push $IMAGE_TAG
 
       # Run tests using Docker Compose
+      - echo "Creating the required external volume app_volume"
+      - docker volume create app_volume
       - echo "Running tests with Docker Compose"
       - docker-compose -f docker-compose.test.yml up --build test-app || exit 1
 
@@ -110,6 +112,13 @@ artifacts:
     - '**/*'
   discard-paths: yes
   base-directory: reports-html  # HTML test reports directory
+
+secondary-artifacts:
+  reports-xml:
+    files:
+      - '**/*'
+    discard-paths: yes
+    base-directory: reports-xml  # The base directory for XML reports
 
 cache:
   paths:
