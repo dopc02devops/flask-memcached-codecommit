@@ -95,26 +95,25 @@ phases:
       - echo "Running tests with Docker Compose"
       - docker-compose -f docker-compose.test.yml up --build test-app || exit 1
 
-      # Copy test reports from containers
-      - echo "Copying test reports from containers"
-      - mkdir -p reports-xml
-      - mkdir -p reports-html
-      - docker cp flask-tests-container:/app/report.xml ./reports-xml/report.xml
-      - docker cp flask-tests-container:/app/report.html ./reports-html/report.html
-
   post_build:
     commands:
       - echo "Merging report directories into one for artifacts"
       - mkdir -p merged-reports
-      - cp -r reports-html/* merged-reports/
-      - cp -r reports-xml/* merged-reports/
+      
+       # Copy test reports from containers
+      - docker cp -r flask-tests-container:/app/report.xml ./merged-reports/report.xml
+      - docker cp -r flask-tests-container:/app/report.html ./merged-reports/report.html
+
+      - echo "Listing generated files:"
+      - ls -R
+
       # Clean up Docker resources
       - echo "Cleaning up Docker resources"
 
 artifacts:
   files:
     - '**/*'
-  discard-paths: yes
+  discard-paths: no
   base-directory: merged-reports
 
 cache:
