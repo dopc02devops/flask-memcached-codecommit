@@ -10,9 +10,11 @@ aws codebuild create-project \
     --name flask-memcached-Project \
     --source type=GITHUB,location=https://github.com/dopc02devops/flask-memcached-codecommit \
     --artifacts type=NO_ARTIFACTS \
-    --environment type=LINUX_CONTAINER,image=aws/codebuild/eb-python-3.4-amazonlinux-64:2.3.2,computeType=BUILD_GENERAL1_SMALL \
-    --service-role arn:aws:iam::908027384199:role/codebuild-role
+    --environment type=LINUX_CONTAINER,image=aws/codebuild/standard:7.0,computeType=BUILD_GENERAL1_SMALL \
+    --service-role arn:aws:iam::908027384199:role/codebuild-role \
     --region eu-west-2
+
+
 
 aws codebuild create-webhook \
     --project-name flask-memcached-Project \

@@ -3,7 +3,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      python: 3.8  # Ensure a modern Python version
+      python: 3.11  # Ensure a modern Python version
     commands:
       # Confirm the Python version
       - echo "Using Python version:"
@@ -16,14 +16,6 @@ phases:
       # Clear pip cache manually if 'pip cache purge' doesn't work
       - echo "Clearing pip cache"
       - rm -rf /root/.cache/pip
-
-      # Add pip wheel for 'blinker==1.9.0' specifically
-      - echo "Building wheel for blinker==1.9.0"
-      - pip wheel blinker==1.9.0
-
-      # Install blinker==1.9.0 directly using the wheel
-      - echo "Installing blinker==1.9.0 from the built wheel"
-      - pip install dist/blinker-1.9.0*.whl
 
       # Install Python dependencies from requirements.txt with no cache
       - echo Installing Python dependencies from requirements.txt
