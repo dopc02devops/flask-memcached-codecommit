@@ -1,0 +1,35 @@
+
+################
+reate repository
+################
+- aws codecommit create-repository --repository-name <repository-name> --repository-description "<description>"
+- aws codecommit list-repositories
+- aws codecommit get-repository --repository-name <repository-name>
+- aws codecommit delete-repository --repository-name <repository-name>
+- aws codecommit update-repository-description --repository-name <repository-name> --repository-description "<new-description>"
+
+#################
+branch management
+#################
+- aws codecommit create-branch --repository-name <repository-name> --branch-name <branch-name> --commit-id <commit-id>
+- aws codecommit list-branches --repository-name <repository-name>
+- aws codecommit delete-branch --repository-name <repository-name> --branch-name <branch-name>
+
+#################
+pull request
+#################
+- aws codecommit create-pull-request --title "<title>" --description "<description>" --targets repositoryName=<repository-name>,sourceReference=<source-branch>,destinationReference=<destination-branch>
+- aws codecommit list-pull-requests --repository-name <repository-name>
+- aws codecommit merge-pull-request-by-fast-forward --pull-request-id <pull-request-id> --repository-name <repository-name> --source-commit-id <source-commit-id>
+
+##################
+add repo as remote
+##################
+- git clone https://github.com/<username>/<GitHub-repository-name>.git
+- git remote remove origin          # Remove GitHub as the origin
+  git remote rename codecommit origin
+- git remote add codecommit https://git-codecommit.<region>.amazonaws.com/v1/repos/<CodeCommit-repository-name>
+- git remote -v
+- git push codecommit --all        # Push all branches
+  git push codecommit --tags       # Push all tags
+- aws codecommit list-branches --repository-name <CodeCommit-repository-name>

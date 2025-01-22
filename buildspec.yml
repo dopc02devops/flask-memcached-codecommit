@@ -1,0 +1,69 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.x  # Specify the Python version (e.g., 3.8 or 3.9)
+    commands:
+      # Install Python dependencies from requirements.txt
+      - echo Installing Python dependencies from requirements.txt
+      - pip install -r requirements.txt
+
+      # Install Docker
+      - echo Installing Docker
+      - curl -fsSL https://get.docker.com -o get-docker.sh
+      - sudo sh get-docker.sh
+      - sudo usermod -aG docker $USER
+
+      # Install Docker Compose
+      - echo Installing Docker Compose
+      - DOCKER_COMPOSE_VERSION="1.29.2"  # Adjust version if needed
+      - curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      - sudo chmod +x /usr/local/bin/docker-compose
+
+      # Install pytest-html
+      - echo Installing pytest-html
+      - pip install pytest-html
+
+  build-image:
+    commands:
+      # Build Docker Image (latest and versioned tag)
+      - echo Building Docker image (latest and versioned)
+      - set -e
+      - cd src
+      - IMAGE_TAG=$DOCKER_USERNAME/python-memcached:$CODEBUILD_RESOLVED_SOURCE_VERSION  # Or use $GITHUB_SHA for GitHub builds
+      - docker build -t $DOCKER_USERNAME/python-memcached:latest -t $IMAGE_TAG -f ./Dockerfile.app .
+
+  scan-file:
+    commands:
+      # Run Docker Scan on the Dockerfile
+      - echo Scanning Dockerfile for vulnerabilities
+      - docker scan --file ./src/Dockerfile.app
+
+  test:
+    commands:
+      # Run tests using Docker Compose
+      - echo Running tests using Docker Compose
+      - docker-compose -f docker-compose.test.yml up --build test-app || exit 1
+
+      # Copy Test Reports from container
+      - echo Copying test reports from container to local environment
+      - mkdir -p reports-xml
+      - mkdir -p reports-html
+      - docker cp flask-tests-container:/app/report.xml ./reports-xml/report.xml
+      - docker cp flask-tests-container:/app/report.html ./reports-html/report.html
+
+  post_build:
+    commands:
+      # Clean up Docker resources after build
+      - echo Cleaning up Docker resources
+
+      # Remove containers, images, and volumes
+      - echo Stopping and removing all running containers
+      - docker ps -q | xargs -r docker stop | xargs -r docker rm
+      - echo Removing all Docker images
+      - docker images -q | xargs -r docker rmi -f
+      - echo Removing all Docker volumes
+      - docker volume ls -q | xargs -r docker volume rm
+
+      - echo Post build phase completed
