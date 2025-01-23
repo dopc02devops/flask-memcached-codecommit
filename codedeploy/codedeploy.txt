@@ -1,0 +1,94 @@
+########################################################################
+aws codedeploy
+########################################################################
+
+###################
+create application
+###################
+aws deploy create-application --application-name flask-memcached-App
+
+######################
+create lunch template 
+######################
+- craete sg 
+- get subnets and add to lunch-template
+    aws ec2 describe-subnets --region eu-west-2
+- create ec2 role 
+    ec2-role
+    attach ec2 policy 
+- create instance profile 
+    aws iam create-instance-profile --instance-profile-name flask-memcached-instance-profile
+- add role to instance-profile then and add to lunch-template
+    aws iam add-role-to-instance-profile --instance-profile-name flask-memcached-instance-profile --role-name ec2-role
+
+
+
+
+
+
+
+
+
+
+
+
+Create the Auto Scaling Group
+aws autoscaling create-auto-scaling-group \
+    --auto-scaling-group-name flask-memcached-auto-scaling-group \
+    --launch-template "LaunchTemplateName=flask-memcached-template,Version=1" \
+    --min-size 1 \
+    --max-size 3 \
+    --desired-capacity 2 \
+    --vpc-zone-identifier "subnet-xxxxxxxx,subnet-yyyyyyyy" \
+    --tags Key=Name,Value=flask-memcached-instance,PropagateAtLaunch=true
+
+Configure Scaling Policies
+aws autoscaling put-scaling-policy \
+    --auto-scaling-group-name flask-memcached-auto-scaling-group \
+    --policy-name scale-up \
+    --scaling-adjustment 1 \
+    --adjustment-type ChangeInCapacity \
+    --cooldown 300 \
+    --metric-aggregation-type Average \
+    --estimated-instance-warmup 300 \
+    --step-adjustments "MetricIntervalLowerBound=0,ScalingAdjustment=1"
+
+Verify the Auto Scaling Group
+aws autoscaling describe-auto-scaling-groups --auto-scaling-group-name flask-memcached-auto-scaling-group
+
+
+Deployment Group
+create codedeploy role 
+aws deploy create-deployment-group \
+    --application-name flask-memcached-App \
+    --deployment-group-name flask-memcached-Deploy-Group \
+    --service-role-arn arn:aws:iam::908027384199:role/codedeploye-role \
+    --deployment-config-name CodeDeployDefault.OneAtATime \
+    --ec2-tag-filters Key=Name,Value=MyInstance,Type=KEY_AND_VALUE \
+    --auto-scaling-groups flask-memcached-auto-scaling-group \
+    --load-balancer-info "targetGroupInfoList=[{name=flask-memcached-target-group}]" \
+    --deployment-style deploymentType=IN_PLACE \
+    --alarm-configuration "alarms=[{name=MyAlarm}],enabled=true,ignorePollAlarmFailure=false" \
+    --trigger-configurations "triggerName=MyTrigger,triggerTargetArn=arn:aws:sns:us-east-1:123456789012:MySNSTopic,triggerEvents=[DeploymentSuccess,DeploymentFailure]" \
+    --auto-rollback-configuration "enabled=true,events=[DEPLOYMENT_FAILURE,DEPLOYMENT_STOP_ON_ALARM,DEPLOYMENT_STOP_ON_REQUEST]" \
+    --output json
+
+
+Package and Upload the Application to S3
+zip -r my-docker-app.zip ./
+
+Upload the ZIP file to your S3 bucket
+aws s3 cp my-docker-app.zip s3://your-s3-bucket-name/
+
+ Create a Deployment
+aws deploy create-deployment \
+    --application-name my-docker-app \
+    --deployment-group-name my-docker-deployment-group \
+    --s3-location bucket=your-s3-bucket-name,key=my-docker-app.zip,bundleType=zip
+
+Monitor the Deployment
+
+aws deploy get-deployment --deployment-id <deployment-id>
+Make sure that your EC2 instances have the CodeDeploy agent installed.
+You need to ensure your IAM role has proper permissions to access S3, CodeDeploy, EC2, and any other resources.
+expose port 8090

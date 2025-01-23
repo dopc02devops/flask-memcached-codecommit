@@ -1,29 +1,33 @@
 
+########################################################################
+aws codebuild
+########################################################################
+
+#################
+list build images
+#################
 aws codebuild list-curated-environment-images
 
-add policy
-    - AWSCodeBuildAdminAccess
-create role 
-    - codebuild-role
-    AWSCodeBuildDeveloperAccess
-    CloudWatchFullAccess
-    SecretsManagerReadWrite
+###################
+policies and roles
+###################
+- AWSCodeBuildAdminAccess
+- codebuild-role
+- AWSCodeBuildDeveloperAccess
+- CloudWatchFullAccess
+- SecretsManagerReadWrite
 
+#######################
+create docker hub login
+#######################
 aws secretsmanager create-secret \
     --name "docker-credentials" \
     --description "Docker Hub credentials" \
     --secret-string '{"DOCKER_USERNAME":"your_docker_username","DOCKER_PASSWORD":"your_docker_password"}'
 
-aws codebuild create-project \
-    --name flask-memcached-Project \
-    --source type=GITHUB,location=https://github.com/dopc02devops/flask-memcached-codecommit \
-    --artifacts type=NO_ARTIFACTS \
-    --environment type=LINUX_CONTAINER,image=aws/codebuild/standard:7.0,computeType=BUILD_GENERAL1_SMALL \
-    --service-role arn:aws:iam::908027384199:role/codebuild-role \
-    --region eu-west-2
-
-with artefacts
-
+########################
+create codebuild project 
+########################
 aws codebuild create-project \
     --name flask-memcached-Project \
     --source type=GITHUB,location=https://github.com/dopc02devops/flask-memcached-codecommit \
@@ -33,14 +37,21 @@ aws codebuild create-project \
     --region eu-west-2
 
 
-
+#####################
+add codebuild webhook 
+#####################
 aws codebuild create-webhook \
     --project-name flask-memcached-Project \
     --branch-filter "refs/heads/main" \
     --filter-group "EVENT"
 
+###########
+start build
+###########
 aws codebuild start-build --project-name flask-memcached-Project
 
-
+##############
+delete project 
+##############
 aws codebuild delete-project --name flask-memcached-Project
 
