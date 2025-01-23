@@ -1,72 +1,62 @@
 #!/bin/bash
 
-# Define variables
 USER_NAME="kube_user"
-PUB_KEY="myKey"
+PUB_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCVG5b1Eb1+VRWgWm7rVYk6SwqTClBkqYGN728UkOnuIsk698KIQvFDiGSFkMGGvkNB8loK9cnW4o9jLJIWAuv8HviaOthb0YtNY32plzAQigKT322JjC2iCuomMCfZqQJK/BO5Dzh2wZN3/IzhytCPkScPSKQ27Ra/bRhpxbUxKRazOAB02wT2Zed5XUsP13L+paDQG5f/iIePqLUN5kVna8QXHHFKT98ZpmRII7M6PmxuCpdSuCaq6FFiK8kJ/RoYjZ8K3BuxySni1iuvqM8ESb8eE23vtxOHqRZqUw7lGwvKQeZwWToiPZcgBTpdDf/19fARjv9CWywaVyv0kKRSGBBOpotHxazOY+u8t94gLVwD0fRtMqrSvtisSbJTEq36l9udREPZQ2DcKwrXtyozIbTus5fVs3xeTtgkwolU+qH+xOUCv4uaYOy9U0dY6qe5PhQURckGjUqu0KXJIysSK68YQhfAAVDXnB6k6Lt6T3CzFEaNFtMbTrrlShh80cZX9uVkPLJ7KSqFoIT8mliLwCiGKnYi/v619CRl45vKXJPvMd/daWmVr+7SQndKsdUxBM7eyVYeJpujpZlEdbzgqVDwkVfa3jdzrKDMnMKAWQe9iuUCWuPD8CybOaZIpj1ipSq2zjDsMK3yMn5fCNJUg4PHHwbmkuFlm41YITKTMw== terraform
+"
 
 echo "Starting script execution..."
 
-# 1. Create a user if it doesn't already exist
-if id "$USER_NAME" &>/dev/null; then
-    echo "User $USER_NAME already exists."
-else
+# Create user if not exists
+if ! id "$USER_NAME" &>/dev/null; then
     echo "Creating user $USER_NAME..."
     sudo useradd -m -s /bin/bash "$USER_NAME"
-    echo "User $USER_NAME created."
 fi
 
-# 2. Add the public SSH key to the user's authorized keys
+# Set up SSH
 USER_HOME=$(eval echo "~$USER_NAME")
 SSH_DIR="$USER_HOME/.ssh"
 AUTHORIZED_KEYS="$SSH_DIR/authorized_keys"
 
 echo "Setting up SSH for $USER_NAME..."
-sudo mkdir -p "$SSH_DIR"
-sudo chmod 700 "$SSH_DIR"
+sudo mkdir -p "$SSH_DIR" && sudo chmod 700 "$SSH_DIR"
 echo "$PUB_KEY" | sudo tee -a "$AUTHORIZED_KEYS" > /dev/null
-sudo chmod 600 "$AUTHORIZED_KEYS"
-sudo chown -R "$USER_NAME:$USER_NAME" "$SSH_DIR"
-echo "Public key added to $AUTHORIZED_KEYS."
+sudo chmod 600 "$AUTHORIZED_KEYS" && sudo chown -R "$USER_NAME:$USER_NAME" "$SSH_DIR"
 
-# 3. Add the user to the 'sudo' group (allowing sudo privileges)
-echo "Adding $USER_NAME to the sudo group..."
-sudo usermod -aG sudo "$USER_NAME"
-echo "$USER_NAME added to sudo group."
+# Add user to groups
+echo "Adding $USER_NAME to groups..."
+sudo usermod -aG sudo docker "$USER_NAME"
+sudo getent group docker &>/dev/null || sudo groupadd docker
 
-# 4. Create 'docker' group if it doesn't exist and add user to it
-if ! getent group docker >/dev/null; then
-    echo "Creating 'docker' group..."
-    sudo groupadd docker
-    echo "'docker' group created."
-else
-    echo "'docker' group already exists."
-fi
-
-echo "Adding $USER_NAME to the docker group..."
-sudo usermod -aG docker "$USER_NAME"
-echo "$USER_NAME added to the docker group."
-
-# 5. Install AWS CodeBuild Agent
+# Install AWS CodeBuild Agent
 echo "Installing AWS CodeBuild agent..."
-
-# Update the system and install required packages
-sudo yum update -y
-sudo yum install -y aws-cli jq
-
-# Download the CodeBuild agent
-CODEBUILD_AGENT_URL="https://d3kbcqa49mib13.cloudfront.net/latest/codebuild-agent.tar.gz"
-sudo mkdir -p /usr/local/codebuild-agent
-cd /usr/local/codebuild-agent
-sudo curl -O $CODEBUILD_AGENT_URL
-sudo tar -xzf codebuild-agent.tar.gz
-sudo rm -f codebuild-agent.tar.gz
-
-# Install the CodeBuild agent
-sudo yum install -y python3
+sudo yum update -y && sudo yum install -y aws-cli jq python3
 sudo python3 -m pip install boto3
-echo "Starting CodeBuild agent..."
-sudo nohup ./agent &
 
-echo "CodeBuild agent installed and started successfully."
+sudo mkdir -p /usr/local/codebuild-agent && cd /usr/local/codebuild-agent
+sudo curl -O https://d3kbcqa49mib13.cloudfront.net/latest/codebuild-agent.tar.gz
+sudo tar -xzf codebuild-agent.tar.gz && sudo rm -f codebuild-agent.tar.gz
 
+# Create and enable systemd service for the agent
+echo "Setting up CodeBuild agent service..."
+sudo tee /etc/systemd/system/codebuild-agent.service > /dev/null <<EOF
+[Unit]
+Description=AWS CodeBuild Agent
+After=network.target
+
+[Service]
+ExecStart=/usr/local/codebuild-agent/agent
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable codebuild-agent
+sudo systemctl start codebuild-agent
+
+echo "CodeBuild agent enabled and started successfully."
 echo "Script execution completed."
+
+# pbcopy < ~/.ssh/id_kube_user_key.pub

@@ -1,4 +1,3 @@
-
 aws ec2 create-launch-template \
     --launch-template-name flask-memcached-template \
     --version-description "v1" \
@@ -17,7 +16,7 @@ aws ec2 create-launch-template \
         "IamInstanceProfile": {
             "Name": "flask-memcached-instance-profile"
         },
-        "UserData": "IyEvYmluL2Jhc2gKZWNobyAiU3RhcnRpbmcgZmxhc2sgYXBwbGljYXRpb24iID4gL2V0Yy9tb3RpdmF0ZS5sb2cKYXB0LWdldCB1cGRhdGUgLXkgJiYgYXB0LWdldCBpbnN0YWxsIC15IGZsYXNrIG1lbWNhY2hlZCAmJiBzeXN0ZW1jdGwgZmwxLXN0YXJ0",
+        "UserData": "",
         "BlockDeviceMappings": [
             {
                 "DeviceName": "/dev/xvda",

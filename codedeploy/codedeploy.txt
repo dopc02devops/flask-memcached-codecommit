@@ -20,6 +20,8 @@ create lunch template
     aws iam create-instance-profile --instance-profile-name flask-memcached-instance-profile
 - add role to instance-profile then and add to lunch-template
     aws iam add-role-to-instance-profile --instance-profile-name flask-memcached-instance-profile --role-name ec2-role
+- run below command to add encoded user-data to lunch-template
+    base64 user-script.sh | awk '{print "UserData: "$0}' > lunch-template.txt
 
 
 
