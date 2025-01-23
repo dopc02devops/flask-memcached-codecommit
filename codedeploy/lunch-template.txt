@@ -16,7 +16,7 @@ aws ec2 create-launch-template \
         "IamInstanceProfile": {
             "Name": "flask-memcached-instance-profile"
         },
-        "UserData": "",
+    "UserData": ""
         "BlockDeviceMappings": [
             {
                 "DeviceName": "/dev/xvda",
