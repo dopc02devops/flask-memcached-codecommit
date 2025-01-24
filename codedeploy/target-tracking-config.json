@@ -1,0 +1,13 @@
+{
+    "TargetValue": 50.0,
+    "PredefinedMetricSpecification": {
+      "PredefinedMetricType": "ASGAverageCPUUtilization"
+    },
+    "TargetTrackingScalingPolicyConfiguration": {
+      "EstimatedInstanceWarmup": 300,
+      "DisableScaleIn": false,
+      "ScaleInCooldown": 300,
+      "ScaleOutCooldown": 300
+    }
+  }
+  
