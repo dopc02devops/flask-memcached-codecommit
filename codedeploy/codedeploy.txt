@@ -49,54 +49,62 @@ create lunch template
 
 - get sport instance rate
     aws ec2 describe-spot-price-history --instance-types t2.micro t2.small t2.medium --product-description "Linux/UNIX" --start-time "2025-01-23T00:00:00Z"
-- add cloudwatch config to ssm 
-    aws ssm put-parameter \
-        --name "flask-memcached-cloudWatch" \
-        --type "String" \
-        --value file://ssm-config.json \
-        --region eu-west-2
-- delete parameter 
-    aws ssm delete-parameter \
-    --name "flask-memcached-cloudWatch" \
-    --region eu-west-2
-
-- get parameter 
-    aws ssm describe-parameters \
-    --region eu-west-2
-
-
-
-
-
-
-
-
-
-
 
 Create the Auto Scaling Group
 aws autoscaling create-auto-scaling-group \
     --auto-scaling-group-name flask-memcached-auto-scaling-group \
-    --launch-template "LaunchTemplateName=flask-memcached-template,Version=1" \
+    --launch-template "LaunchTemplateName=flask-memcached-template,Version=2" \
     --min-size 1 \
-    --max-size 3 \
+    --max-size 4 \
     --desired-capacity 2 \
-    --vpc-zone-identifier "subnet-xxxxxxxx,subnet-yyyyyyyy" \
-    --tags Key=Name,Value=flask-memcached-instance,PropagateAtLaunch=true
+    --vpc-zone-identifier "subnet-05888a03e0511ede0,subnet-0f63b4f01d0bec499" \
+    --health-check-type EC2 \
+    --health-check-grace-period 300 \
+    --tags Key=Name,Value=Flask-Memcached-Instance,PropagateAtLaunch=true
+
+- get 
+    aws autoscaling describe-auto-scaling-groups \
+    --auto-scaling-group-names flask-memcached-auto-scaling-group
+
+- update 
+    aws autoscaling update-auto-scaling-group \
+    --auto-scaling-group-name flask-memcached-auto-scaling-group \
+    --desired-capacity 0 \
+    --min-size 0
+
+
+- delete 
+    aws autoscaling delete-auto-scaling-group \
+    --auto-scaling-group-name flask-memcached-auto-scaling-group
+
+
 
 Configure Scaling Policies
-aws autoscaling put-scaling-policy \
+simple scalling policy 
+    aws autoscaling put-scaling-policy \
     --auto-scaling-group-name flask-memcached-auto-scaling-group \
     --policy-name scale-up \
     --scaling-adjustment 1 \
     --adjustment-type ChangeInCapacity \
+    --cooldown 300
+Step Scaling Policy
+    aws autoscaling put-scaling-policy \
+    --auto-scaling-group-name flask-memcached-auto-scaling-group \
+    --policy-name scale-up \
+    --policy-type StepScaling \
     --cooldown 300 \
     --metric-aggregation-type Average \
     --estimated-instance-warmup 300 \
-    --step-adjustments "MetricIntervalLowerBound=0,ScalingAdjustment=1"
+    --adjustment-type ChangeInCapacity \
+    --step-adjustments "ScalingAdjustment=1,MetricIntervalLowerBound=0"
 
-Verify the Auto Scaling Group
-aws autoscaling describe-auto-scaling-groups --auto-scaling-group-name flask-memcached-auto-scaling-group
+delete 
+    aws autoscaling delete-policy \
+    --auto-scaling-group-name flask-memcached-auto-scaling-group \
+    --policy-name scale-up
+
+create sns topic 
+    aws sns create-topic --name Mflask-memcached-SNSTopic --region eu-west-2
 
 
 Deployment Group
@@ -106,27 +114,40 @@ aws deploy create-deployment-group \
     --deployment-group-name flask-memcached-Deploy-Group \
     --service-role-arn arn:aws:iam::908027384199:role/codedeploye-role \
     --deployment-config-name CodeDeployDefault.OneAtATime \
-    --ec2-tag-filters Key=Name,Value=MyInstance,Type=KEY_AND_VALUE \
+    --ec2-tag-filters Key=Name,Value=Flask-Memcached-Instance,Type=KEY_AND_VALUE \
     --auto-scaling-groups flask-memcached-auto-scaling-group \
     --load-balancer-info "targetGroupInfoList=[{name=flask-memcached-target-group}]" \
-    --deployment-style deploymentType=IN_PLACE \
+    --deployment-style "deploymentType=IN_PLACE,deploymentOption=WITHOUT_TRAFFIC_CONTROL" \
     --alarm-configuration "alarms=[{name=MyAlarm}],enabled=true,ignorePollAlarmFailure=false" \
-    --trigger-configurations "triggerName=MyTrigger,triggerTargetArn=arn:aws:sns:us-east-1:123456789012:MySNSTopic,triggerEvents=[DeploymentSuccess,DeploymentFailure]" \
+    --trigger-configurations "triggerName=MyTrigger,triggerTargetArn=arn:aws:sns:eu-west-2:908027384199:Mflask-memcached-SNSTopic,triggerEvents=[DeploymentSuccess,DeploymentFailure]" \
     --auto-rollback-configuration "enabled=true,events=[DEPLOYMENT_FAILURE,DEPLOYMENT_STOP_ON_ALARM,DEPLOYMENT_STOP_ON_REQUEST]" \
     --output json
 
+get deployment
+    aws deploy get-deployment-group --application-name flask-memcached-App --deployment-group-name flask-memcached-Deploy-Group
+
 
 Package and Upload the Application to S3
-zip -r my-docker-app.zip ./
+    zip -r flask-memcached-App.zip ./
 
-Upload the ZIP file to your S3 bucket
-aws s3 cp my-docker-app.zip s3://your-s3-bucket-name/
+create s3 bucket and upload the ZIP file
+    aws s3api create-bucket --bucket flask-memcached-app-bucket \
+    --region eu-west-2 \
+    --create-bucket-configuration LocationConstraint=eu-west-2
+list buckets
+    aws s3api list-buckets
+    aws s3api get-bucket-location --bucket flask-memcached-app-bucket
+
+copy file to bucket
+    aws s3 cp flask-memcached-App.zip s3://flask-memcached-app-bucket/flask
+
+dont forget to create docker volume
 
  Create a Deployment
-aws deploy create-deployment \
-    --application-name my-docker-app \
-    --deployment-group-name my-docker-deployment-group \
-    --s3-location bucket=your-s3-bucket-name,key=my-docker-app.zip,bundleType=zip
+    aws deploy create-deployment \
+        --application-name flask-memcached-app \
+        --deployment-group-name flask-memcached-deployment-group \
+        --s3-location bucket=flask-memcached-app-bucket/flask,key=my-flask-memcached-App.zip,bundleType=zip
 
 Monitor the Deployment
 

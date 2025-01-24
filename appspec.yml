@@ -1,19 +1,27 @@
 version: 0.0
 os: linux
+
 files:
-  - source: /docker-compose.yml
-    destination: /home/ec2-user/app/
+  - source: docker-compose.env.yml        # This is the source file, it could be a config or environment file for Docker Compose.
+    destination: /home/kube_user/         # Destination on the server where the file will be copied to.
 
 hooks:
   BeforeInstall:
-    - location: scripts/before_install.sh
-      timeout: 300
+    - location: scripts/before_install.sh  # This script is run before the application files are installed.
+      timeout: 300                         # The script will have a timeout of 300 seconds (5 minutes).
+      # Possible use: prepare the server environment, clean old files, install dependencies, etc.
+
   AfterInstall:
-    - location: scripts/after_install.sh
-      timeout: 300
+    - location: scripts/after_install.sh   # This script is run after the application files are installed.
+      timeout: 300                         # Timeout of 300 seconds (5 minutes).
+      # Possible use: post-installation tasks such as configuring application settings, checking dependencies, etc.
+      
   ApplicationStart:
-    - location: scripts/start_containers.sh
-      timeout: 300
+    - location: scripts/start_containers.sh  # This script is used to start the application (e.g., start Docker containers).
+      timeout: 300                            # Timeout of 300 seconds (5 minutes).
+      # Possible use: starting Docker containers, application server, or other services.
+
   ApplicationStop:
-    - location: scripts/stop_containers.sh
-      timeout: 300
+    - location: scripts/stop_containers.sh   # This script is used to stop the application, typically before a new deployment.
+      timeout: 300                            # Timeout of 300 seconds (5 minutes).
+      # Possible use: stop running Docker containers, or shut down the application services before deployment.

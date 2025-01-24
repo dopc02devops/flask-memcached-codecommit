@@ -26,7 +26,7 @@
 
 
 # ssh
-    ssh -i ~/.ssh/id_kube_user_key jenkins@ip
+    ssh -i ~/.ssh/id_kube_user_key kube_user@ip
     copy key: pbcopy < ~/.ssh/id_kube_user_key.pub
 # host file
 sudo vim /Users/name/.ssh/known_hosts
