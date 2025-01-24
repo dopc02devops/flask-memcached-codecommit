@@ -1,0 +1,99 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11  # Ensure a modern Python version
+    commands:
+      # Confirm the Python version
+      - echo "Using Python version:"
+      - python --version
+
+      # Upgrade pip, setuptools, and wheel
+      - echo "Upgrading pip, setuptools, and wheel"
+      - python -m pip install --upgrade pip setuptools wheel
+
+      # Clear pip cache manually (uncomment if you want a fresh start)
+      # - echo "Clearing pip cache"
+      # - rm -rf /root/.cache/pip
+
+      # Create and activate a virtual environment
+      - echo "Creating and activating virtual environment"
+      - python -m venv venv
+      - . venv/bin/activate  # Activate virtual environment
+
+      # Install Python dependencies from requirements.txt
+      - echo "Installing Python dependencies from requirements.txt"
+      - pip install -r requirements.txt
+
+      # Install Docker and Docker Compose
+      - echo "Checking if Docker is installed"
+      - |
+        if ! command -v docker &> /dev/null; then
+          echo "Docker not found, installing Docker...";
+          curl -fsSL https://get.docker.com -o get-docker.sh;
+          sh get-docker.sh;
+        else
+          echo "Docker is already installed";
+        fi
+
+      - echo "Checking if Docker Compose is installed"
+      - |
+        if ! command -v docker-compose &> /dev/null; then
+          echo "Docker Compose not found, installing Docker Compose...";
+          DOCKER_COMPOSE_VERSION="2.32.4";  # Specify the version
+          curl -L "https://github.com/docker/compose/releases/download/v$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose;
+          chmod +x /usr/local/bin/docker-compose;  # Ensure the binary is executable
+          echo "Docker Compose installed successfully";
+        else
+          echo "Docker Compose is already installed: $(docker-compose --version)";
+        fi
+      - echo "Verifying Docker Compose installation"
+      - docker-compose --version
+
+      # Add current user to the Docker group
+      - echo "Adding the correct user to the docker group"
+      - CURRENT_USER=$(whoami)
+      - sudo usermod -aG docker $CURRENT_USER
+
+      # Install pytest-html for test reporting
+      - echo "Installing pytest-html"
+      - pip install pytest-html
+
+  build:
+    commands:
+      # Retrieve Docker credentials from Secrets Manager
+      - echo "Retrieving Docker credentials from Secrets Manager"
+      - export DOCKER_CREDS=$(aws secretsmanager get-secret-value --secret-id "docker-credentials" --query "SecretString" --output text)
+      - export DOCKER_USERNAME=$(echo $DOCKER_CREDS | jq -r .DOCKER_USERNAME)
+      - export DOCKER_PASSWORD=$(echo $DOCKER_CREDS | jq -r .DOCKER_PASSWORD)
+
+      # Log in to Docker
+      - echo "Logging in to Docker Hub"
+      - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+
+      # Build Docker image with versioned tag
+      - echo "Building Docker image"
+      - IMAGE_TAG=$DOCKER_USERNAME/python-memcached:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - docker build -t $IMAGE_TAG -f ./src/Dockerfile.app .
+
+      # Scan Docker image for vulnerabilities
+      - echo "Installing Trivy for Docker image scanning"
+      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+      - echo "Adding Trivy to PATH"
+      - export PATH=$PATH:$(pwd)/bin 
+      - echo "Scanning the Docker image for vulnerabilities using Trivy"
+      - trivy image --severity CRITICAL,HIGH $IMAGE_TAG
+
+      # Push the image to Docker Hub
+      - echo "Pushing Docker image to Docker Hub"
+      - docker push $IMAGE_TAG
+
+  post_build:
+    commands:
+      - echo "Nothing to do in post build"
+
+cache:
+  paths:
+    - '/root/.cache/pip/**/*'
+    - 'venv/**/*' 

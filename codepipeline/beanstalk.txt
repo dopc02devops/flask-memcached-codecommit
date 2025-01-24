@@ -1,0 +1,156 @@
+1. Set up the S3 bucket for artifacts
+bash
+Copy
+Edit
+aws s3 mb s3://your-artifacts-bucket-name
+2. Create a CodeBuild Project for the Build Stage
+bash
+Copy
+Edit
+aws codebuild create-project --name BuildProject \
+    --source type=GITHUB,location=https://github.com/your-repo/your-project \
+    --artifacts type=CODEPIPELINE \
+    --environment type=LINUX_CONTAINER,image=aws/codebuild/standard:6.0,computeType=BUILD_GENERAL1_SMALL \
+    --service-role arn:aws:iam::your-account-id:role/service-role/codebuild-role
+3. Create a CodeBuild Project for the Test Stage
+bash
+Copy
+Edit
+aws codebuild create-project --name TestProject \
+    --source type=CODEPIPELINE \
+    --artifacts type=CODEPIPELINE \
+    --environment type=LINUX_CONTAINER,image=aws/codebuild/standard:6.0,computeType=BUILD_GENERAL1_SMALL \
+    --service-role arn:aws:iam::your-account-id:role/service-role/codebuild-role
+4. Create the CodePipeline
+Replace the placeholders in the following JSON structure and save it as pipeline.json:
+
+json
+Copy
+Edit
+{
+  "pipeline": {
+    "name": "MyPipeline",
+    "roleArn": "arn:aws:iam::your-account-id:role/AWS-CodePipeline-Service-Role",
+    "artifactStore": {
+      "type": "S3",
+      "location": "your-artifacts-bucket-name"
+    },
+    "stages": [
+      {
+        "name": "Source",
+        "actions": [
+          {
+            "name": "SourceAction",
+            "actionTypeId": {
+              "category": "Source",
+              "owner": "ThirdParty",
+              "provider": "GitHub",
+              "version": "1"
+            },
+            "runOrder": 1,
+            "configuration": {
+              "Owner": "your-github-username",
+              "Repo": "your-repo-name",
+              "Branch": "main",
+              "OAuthToken": "your-github-token"
+            },
+            "outputArtifacts": [
+              {
+                "name": "SourceOutput"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Build",
+        "actions": [
+          {
+            "name": "BuildAction",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "runOrder": 1,
+            "configuration": {
+              "ProjectName": "BuildProject"
+            },
+            "inputArtifacts": [
+              {
+                "name": "SourceOutput"
+              }
+            ],
+            "outputArtifacts": [
+              {
+                "name": "BuildOutput"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Test",
+        "actions": [
+          {
+            "name": "TestAction",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "runOrder": 1,
+            "configuration": {
+              "ProjectName": "TestProject"
+            },
+            "inputArtifacts": [
+              {
+                "name": "BuildOutput"
+              }
+            ],
+            "outputArtifacts": [
+              {
+                "name": "TestOutput"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Deploy",
+        "actions": [
+          {
+            "name": "DeployAction",
+            "actionTypeId": {
+              "category": "Deploy",
+              "owner": "AWS",
+              "provider": "ElasticBeanstalk",
+              "version": "1"
+            },
+            "runOrder": 1,
+            "configuration": {
+              "ApplicationName": "YourElasticBeanstalkApp",
+              "EnvironmentName": "YourElasticBeanstalkEnv"
+            },
+            "inputArtifacts": [
+              {
+                "name": "BuildOutput"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "version": 1
+  }
+}
+Deploy the pipeline using:
+
+bash
+Copy
+Edit
+aws codepipeline create-pipeline --cli-input-json file://pipeline.json
+5. Validate Your Setup
+You can monitor the progress in the AWS Console under CodePipeline, CodeBuild, and Elastic Beanstalk sections.

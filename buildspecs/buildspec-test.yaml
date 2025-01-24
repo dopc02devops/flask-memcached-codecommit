@@ -1,0 +1,42 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11  # Ensure a modern Python version
+    commands:
+      
+      - echo "nothing to install, build stage has already installed"
+      
+  build:
+    commands:
+      # Run tests using Docker Compose
+      - echo "Creating the required external volume app_volume"
+      - docker volume create app_volume
+      - echo "Running tests with Docker Compose"
+      - docker-compose -f docker-compose.test.yml up --build test-app || exit 1
+
+  post_build:
+    commands:
+      - echo "Merging report directories into one for artifacts"
+      - mkdir -p merged-reports
+
+      # Copy test reports from containers
+      - docker cp flask-tests-container:/app/report.xml ./report.xml
+      - docker cp flask-tests-container:/app/report.html ./report.html
+
+      - echo "Listing generated files in merged-reports:"
+      - find . -type f \( -iname "*.xml" -o -iname "*.html" \)
+      # Debugging directory existence
+      - if [ -d "merged-reports" ]; then echo "merged-reports directory exists"; else echo "merged-reports directory not found"; fi
+
+artifacts:
+  files:
+    - report.xml
+    - report.html
+  discard-paths: no
+
+cache:
+  paths:
+    - '/root/.cache/pip/**/*'
+    - 'venv/**/*' 
