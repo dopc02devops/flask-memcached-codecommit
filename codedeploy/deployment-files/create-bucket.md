@@ -10,7 +10,7 @@ Create bucket and copy files over to s3
     aws s3api get-bucket-location --bucket flask-memcached-app-bucket
 
 - copy file to bucket
-    aws s3 cp flask-memcached-App.zip s3://flask-memcached-app-bucket/flask
+    aws s3 cp flask-memcached-app.zip s3://flask-memcached-app-bucket
 
 
 - empty then delete bucket

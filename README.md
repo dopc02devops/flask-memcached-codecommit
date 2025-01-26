@@ -70,3 +70,12 @@ sudo vim /Users/name/.ssh/known_hosts
 - kubectl top pod <pod-name> -n <namespace>
 - kubectl describe pod <pod-name> -n <namespace>
 - kubectl top pods --all-namespaces
+
+######################
+# view logs
+######################
+- journalctl -u docker
+- journalctl -u docker -f
+- sudo docker logs container-id
+- sudo docker inspect container-id
+- 

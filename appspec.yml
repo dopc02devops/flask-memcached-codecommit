@@ -8,18 +8,25 @@ files:
 hooks:
   BeforeInstall:
     - location: scripts/set_permissions.sh
+      runas: kube_user
       timeout: 300
     - location: scripts/before_install.sh
+      runas: kube_user
       timeout: 300
 
   AfterInstall:
     - location: scripts/after_install.sh
+      runas: kube_user
       timeout: 300
 
   ApplicationStart:
     - location: scripts/start_containers.sh
+      runas: kube_user
       timeout: 300
+      arguments:
+        - "$CODEBUILD_RESOLVED_SOURCE_VERSION"
 
   ApplicationStop:
     - location: scripts/stop_containers.sh
+      runas: kube_user
       timeout: 300

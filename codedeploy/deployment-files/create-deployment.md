@@ -6,12 +6,12 @@ Create deployment
  - Create a Deployment
     aws deploy create-deployment \
         --application-name flask-memcached-app \
-        --deployment-group-name flask-memcached-deployment-group \
+        --deployment-group-name flask-memcached-Deploy-Group \
         --revision '{
             "revisionType": "S3",
             "s3Location": {
-                "bucket": "flask-memcached-app-bucket/flask",
-                "key": "flask-memcached-App.zip",
+                "bucket": "flask-memcached-app-bucket",
+                "key": "flask-memcached-app.zip",
                 "bundleType": "zip"
             }
         }' \
@@ -20,12 +20,19 @@ Create deployment
 
     aws deploy create-deployment \
         --application-name flask-memcached-app \
-        --deployment-group-name flask-memcached-deployment-group \
+        --deployment-group-name flask-memcached-Deploy-Group \
         --revision '{
             "revisionType": "GitHub",
             "gitHubLocation": {
                 "repository": "dopc02devops/flask-memcached-codecommit",
-                "commitId": "abcdef1234567890"
+                "commitId": "2cdcfc7"
             }
         }' \
         --description "GitHub Deployment"
+
+
+- get deployment
+    aws deploy list-deployments \
+        --application-name flask-memcached-app \
+        --deployment-group-name flask-memcached-Deploy-Group
+

@@ -1,22 +1,54 @@
 #!/bin/bash
 
-# Ensure a version is passed as a parameter
-if [ -z "$1" ]; then
-  echo "Error: Version parameter is required."
-  echo "Usage: script/start_containers.sh <version>"
-  exit 1
+# Set the version directly
+VERSION="c26867bf3226e702a0b8ced2c698994930d75762"
+
+# Log the version for debugging
+echo "VERSION set: $VERSION"
+
+echo "Current working directory: $(pwd)"
+
+cd /home/kube_user/
+
+echo "Current working directory: $(pwd)"
+
+# Path to the docker-compose.env.yml file
+COMPOSE_FILE_PATH="docker-compose.env.yml"
+
+# Check if the compose file exists
+if [[ ! -f "$COMPOSE_FILE_PATH" ]]; then
+    echo "Error: $COMPOSE_FILE_PATH does not exist."
+    exit 1
 fi
 
-VERSION=$1
+# Debug: Show the file before replacement
+echo "Before replacement:"
+cat "$COMPOSE_FILE_PATH"
 
 # Replace the version in the docker-compose.env.yml file
-sed -i "s/\${VERSION}/$VERSION/g" docker-compose.env.yml
+sed -i "s|\${VERSION}|$VERSION|g" "$COMPOSE_FILE_PATH"
+
+# Debug: Show the file after replacement
+echo "After replacement:"
+cat "$COMPOSE_FILE_PATH"
 
 # Check if volumes exist, create them if not
-docker volume inspect flask-app-data &>/dev/null || docker volume create flask-app-data
-docker volume inspect memcached-data &>/dev/null || docker volume create memcached-data
+sudo docker volume inspect flask-app-data &>/dev/null || { echo "Creating flask-app-data volume..."; sudo docker volume create flask-app-data; }
+sudo docker volume inspect memcached-data &>/dev/null || { echo "Creating memcached-data volume..."; sudo docker volume create memcached-data; }
 
 # Bring up the Docker containers with docker-compose
-docker-compose -f docker-compose.env.yml up -d
+sudo docker-compose -f "$COMPOSE_FILE_PATH" up -d
+
+# Check if containers are running
+echo "Checking container status..."
+RUNNING_CONTAINERS=$(sudo docker ps --filter "status=running" --format "{{.Names}}")
+
+if [[ -z "$RUNNING_CONTAINERS" ]]; then
+    echo "No containers are running. Please check for errors in the docker-compose logs."
+    exit 1
+else
+    echo "The following containers are up and running:"
+    echo "$RUNNING_CONTAINERS"
+fi
 
 echo "Containers started successfully with Flask app version $VERSION!"

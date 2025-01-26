@@ -41,7 +41,7 @@ Deployment Group
 Package application
 ###################
 - Package and Upload the Application to S3
-    zip -r flask-memcached-App.zip ./
+    zip -r flask-memcached-app.zip ./
 
 ###################
 Create bucket
