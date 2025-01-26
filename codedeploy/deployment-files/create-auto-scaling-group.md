@@ -18,8 +18,8 @@ aws autoscaling create-auto-scaling-group \
     --auto-scaling-group-name flask-memcached-auto-scaling-group \
     --launch-template "LaunchTemplateName=flask-memcached-template,Version=2" \
     --min-size 1 \
-    --max-size 4 \
-    --desired-capacity 2 \
+    --max-size 3 \
+    --desired-capacity 1 \
     --vpc-zone-identifier "subnet-05888a03e0511ede0,subnet-0f63b4f01d0bec499" \
     --health-check-type EC2 \
     --health-check-grace-period 300 \

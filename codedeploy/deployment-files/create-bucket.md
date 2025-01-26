@@ -1,6 +1,6 @@
-###################
-Create bucket
-###################
+#######################################
+Create bucket and copy files over to s3
+#######################################
 - create s3 bucket and upload the ZIP file
     aws s3api create-bucket --bucket flask-memcached-app-bucket \
     --region eu-west-2 \
@@ -11,3 +11,8 @@ Create bucket
 
 - copy file to bucket
     aws s3 cp flask-memcached-App.zip s3://flask-memcached-app-bucket/flask
+
+
+- empty then delete bucket
+    aws s3 rm s3://flask-memcached-app-bucket --recursive
+    aws s3api delete-bucket --bucket flask-memcached-app-bucket

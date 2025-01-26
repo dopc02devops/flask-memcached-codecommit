@@ -5,7 +5,7 @@ aws codedeploy
 ###################
 create application
 ###################
-aws deploy create-application --application-name flask-memcached-App
+aws deploy create-application --application-name flask-memcached-app
 
 ######################
 create security groups
