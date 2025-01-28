@@ -78,4 +78,12 @@ sudo vim /Users/name/.ssh/known_hosts
 - journalctl -u docker -f
 - sudo docker logs container-id
 - sudo docker inspect container-id
-- 
+- sudo journalctl -p err
+
+
+
+- sudo systemctl status codedeploy-agent
+- sudo systemctl status amazon-cloudwatch-agent
+- sudo journalctl -u codedeploy-agent
+- sudo journalctl -u codedeploy-agent -p err
+

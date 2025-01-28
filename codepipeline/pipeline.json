@@ -23,7 +23,7 @@
               "Owner": "dopc02devops",
               "Repo": "flask-memcached-codecommit",
               "Branch": "main",
-              "OAuthToken": "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"
+              "OAuthToken": ""
             },
             "outputArtifacts": [
               {
@@ -105,8 +105,7 @@
             },
             "runOrder": 1,
             "configuration": {
-              "CustomData": "Please review the pipeline before deploying.",
-              "NotificationArn": "arn:aws:sns:eu-west-2:908027384199:Mflask-memcached-SNSTopic"
+              "CustomData": "Please review the pipeline before deploying."
             },
             "region": "eu-west-2"
           }
@@ -129,6 +128,9 @@
               "DeploymentGroupName": "flask-memcached-Deploy-Group"
             },
             "inputArtifacts": [
+              {
+                "name": "BuildOutput"
+              },
               {
                 "name": "TestOutput"
               }
