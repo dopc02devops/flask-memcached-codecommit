@@ -36,3 +36,23 @@ Create deployment
         --application-name flask-memcached-app \
         --deployment-group-name flask-memcached-Deploy-Group
 
+
+- delete deployment
+
+    aws deploy stop-deployment --deployment-id <deployment-id>
+
+    aws deploy delete-deployment-group \
+        --application-name flask-memcached-app \
+        --deployment-group-name flask-memcached-Deploy-Group
+
+    aws deploy delete-application --application-name flask-memcached-app
+
+- set autoscalling group to 0 capacity
+
+    aws autoscaling update-auto-scaling-group \
+        --auto-scaling-group-name flask-memcached-auto-scaling-group \
+        --desired-capacity 0 \
+        --min-size 0
+
+    
+    

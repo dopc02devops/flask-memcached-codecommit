@@ -1,9 +1,0 @@
-
-Deploy the pipeline using:
-
-bash
-Copy
-Edit
-aws codepipeline create-pipeline --cli-input-json file://pipeline.json
-5. Validate Your Setup
-You can monitor the progress in the AWS Console under CodePipeline, CodeBuild, and Elastic Beanstalk sections.

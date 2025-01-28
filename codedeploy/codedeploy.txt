@@ -58,6 +58,3 @@ Monitor your deployment
 #######################
 
 aws deploy get-deployment --deployment-id <deployment-id>
-Make sure that your EC2 instances have the CodeDeploy agent installed.
-You need to ensure your IAM role has proper permissions to access S3, CodeDeploy, EC2, and any other resources.
-expose port 8090

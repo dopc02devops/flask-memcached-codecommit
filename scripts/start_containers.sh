@@ -1,16 +1,12 @@
 #!/bin/bash
 
 # Set the version directly
-VERSION="c26867bf3226e702a0b8ced2c698994930d75762"
+VERSION="latest"
 
 # Log the version for debugging
 echo "VERSION set: $VERSION"
 
-echo "Current working directory: $(pwd)"
-
 cd /home/kube_user/
-
-echo "Current working directory: $(pwd)"
 
 # Path to the docker-compose.env.yml file
 COMPOSE_FILE_PATH="docker-compose.env.yml"

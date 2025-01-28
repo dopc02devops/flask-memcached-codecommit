@@ -91,8 +91,11 @@ phases:
 
   post_build:
     commands:
-      - echo "Nothing to do in post build"
-
+      - echo "No post build commands to run"
+artifacts:
+  files:
+    - "**/*" 
+  discard-paths: no 
 cache:
   paths:
     - '/root/.cache/pip/**/*'

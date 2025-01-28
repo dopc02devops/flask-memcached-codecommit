@@ -1,0 +1,142 @@
+{
+  "pipeline": {
+    "name": "MyPipeline",
+    "roleArn": "arn:aws:iam::908027384199:role/CodePipelineRole",
+    "artifactStore": {
+      "type": "S3",
+      "location": "flask-memcached-app-bucket"
+    },
+    "stages": [
+      {
+        "name": "Source",
+        "actions": [
+          {
+            "name": "SourceAction",
+            "actionTypeId": {
+              "category": "Source",
+              "owner": "ThirdParty",
+              "provider": "GitHub",
+              "version": "1"
+            },
+            "runOrder": 1,
+            "configuration": {
+              "Owner": "dopc02devops",
+              "Repo": "flask-memcached-codecommit",
+              "Branch": "main",
+              "OAuthToken": "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"
+            },
+            "outputArtifacts": [
+              {
+                "name": "SourceOutput"
+              }
+            ],
+            "region": "eu-west-2"
+          }
+        ]
+      },
+      {
+        "name": "Build",
+        "actions": [
+          {
+            "name": "BuildAction",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "runOrder": 1,
+            "configuration": {
+              "ProjectName": "flask-memcached-build-Project"
+            },
+            "inputArtifacts": [
+              {
+                "name": "SourceOutput"
+              }
+            ],
+            "outputArtifacts": [
+              {
+                "name": "BuildOutput"
+              }
+            ],
+            "region": "eu-west-2"
+          }
+        ]
+      },
+      {
+        "name": "Test",
+        "actions": [
+          {
+            "name": "TestAction",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "runOrder": 1,
+            "configuration": {
+              "ProjectName": "flask-memcached-test-Project"
+            },
+            "inputArtifacts": [
+              {
+                "name": "BuildOutput"
+              }
+            ],
+            "outputArtifacts": [
+              {
+                "name": "TestOutput"
+              }
+            ],
+            "region": "eu-west-2"
+          }
+        ]
+      },
+      {
+        "name": "Approval",
+        "actions": [
+          {
+            "name": "ManualApproval",
+            "actionTypeId": {
+              "category": "Approval",
+              "owner": "AWS",
+              "provider": "Manual",
+              "version": "1"
+            },
+            "runOrder": 1,
+            "configuration": {
+              "CustomData": "Please review the pipeline before deploying.",
+              "NotificationArn": "arn:aws:sns:eu-west-2:908027384199:Mflask-memcached-SNSTopic"
+            },
+            "region": "eu-west-2"
+          }
+        ]
+      },
+      {
+        "name": "Deploy",
+        "actions": [
+          {
+            "name": "DeployAction",
+            "actionTypeId": {
+              "category": "Deploy",
+              "owner": "AWS",
+              "provider": "CodeDeploy",
+              "version": "1"
+            },
+            "runOrder": 1,
+            "configuration": {
+              "ApplicationName": "flask-memcached-app",
+              "DeploymentGroupName": "flask-memcached-Deploy-Group"
+            },
+            "inputArtifacts": [
+              {
+                "name": "TestOutput"
+              }
+            ],
+            "region": "eu-west-2"
+          }
+        ]
+      }
+    ]
+  }
+}
