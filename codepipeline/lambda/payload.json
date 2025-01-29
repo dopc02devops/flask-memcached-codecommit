@@ -1,0 +1,13 @@
+{
+    "detail": {
+      "pipeline": "MyPipeline",
+      "execution-id": "12345",
+      "stage": "Build",
+      "action": "BuildAction",
+      "execution-result": {
+        "external-execution-summary": "Build failed"
+      }
+    },
+    "region": "eu-west-2"
+  }
+  

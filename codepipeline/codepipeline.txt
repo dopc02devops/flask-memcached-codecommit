@@ -1,65 +1,13 @@
 
-Create the IAM Role to execute lambda
-aws iam create-role \
-  --role-name LambdaExecutionRole \
-  --assume-role-policy-document file://trust-policy.json
+################
+Create all roles
+################
+- reference file: policy.md
 
-Attach the Policy to the Role
-aws iam put-role-policy \
-  --role-name LambdaExecutionRole \
-  --policy-name LambdaExecutionPolicy \
-  --policy-document file://lambda-policy.json
-
-Verify the Role and Policy
-aws iam get-role --role-name LambdaExecutionRole
-aws iam get-role-policy --role-name LambdaExecutionRole --policy-name LambdaExecutionPolicy
-
-
-Create a Deployment Package
-We have two lambda functions, one is triggered by event-bridge
-
-zip function.zip pipeline_failure_handler.py
-zip function_event_bridge.zip lambda_event_bridge.py
-
-Deploy the Lambda Function
-
-aws lambda create-function \
-    --function-name PipelineFailureHandler \
-    --runtime python3.9 \
-    --role arn:aws:iam::908027384199:role/LambdaExecutionRole \
-    --handler pipeline_failure_handler.lambda_handler \
-    --zip-file fileb://function.zip \
-    --timeout 60 \
-    --memory-size 128 \
-    --region eu-west-2
-
-aws lambda create-function \
-    --function-name PipelineFailureHandlerEventBidge \
-    --runtime python3.9 \
-    --role arn:aws:iam::908027384199:role/LambdaExecutionRole \
-    --handler lambda_event_bridge.lambda_handler \
-    --zip-file fileb://function_event_bridge.zip \
-    --timeout 60 \
-    --memory-size 128 \
-    --region eu-west-2
-
-get function
-aws lambda get-function --function-name PipelineFailureHandler
-aws lambda get-function --function-name PipelineFailureHandlerEventBidge
-
-update function
-aws lambda update-function-code \
-  --function-name my-pipeline-failure-handler \
-  --zip-file fileb://lambda_function.zip
-
-
-Verify and Test
-aws lambda invoke \
-    --function-name PipelineFailureHandler \
-    --cli-binary-format raw-in-base64-out \
-    --payload file://payload.json \
-    output.json
-
+###########################
+Deploy lambda function
+###########################
+- reference file: lambda.md
 
 Create an Email Subscription
 aws sns subscribe \
@@ -71,139 +19,24 @@ Create an SMS Subscription
 aws sns subscribe \
   --topic-arn arn:aws:sns:eu-west-2:908027384199:Mflask-memcached-SNSTopic \
   --protocol sms \
-  --notification-endpoint +447500351582
+  --notification-endpoint +447xxxxxxxx
 
-create  EventBridge role
-aws iam create-role \
-  --role-name EventBridgeRole \
-  --assume-role-policy-document file://trust-policy-event.json
+###################
+Set-up event-bridge
+###################
+- reference file: event-bridge.md
 
-aws iam attach-role-policy \
-  --role-name EventBridgeRole \
-  --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-
-aws iam attach-role-policy \
-  --role-name EventBridgeRole \
-  --policy-arn arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
-
-aws iam attach-role-policy \
-  --role-name EventBridgeRole \
-  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaRole
-
-
-Define the EventBridge Rule
-aws events put-rule \
-  --name PipelineFailureRule \
-  --event-pattern '{
-    "source": ["myapp.events"],
-    "detail-type": ["CodePipeline Pipeline Execution State Change"],
-    "detail": {
-      "state": ["FAILED"]
-    }
-  }' \
-  --event-bus-name default
-
-aws events put-rule \
-    --name "PipelineFailureRule" \
-    --event-pattern '{
-        "source": ["aws.codepipeline"],
-        "detail-type": ["CodePipeline Pipeline Execution State Change"],
-        "detail": {
-            "state": ["FAILED"]
-        }
-    }' \
-    --description "Triggers Lambda on pipeline failure" \
-    --role-arn "arn:aws:iam::908027384199:role/EventBridgeRole"
-
-aws events put-rule \
-    --name "PipelineFailureRule" \
-    --event-pattern '{
-        "source": ["aws.codepipeline", "myapp.events"],
-        "detail-type": ["CodePipeline Pipeline Execution State Change"],
-        "detail": {
-            "state": ["FAILED"]
-        }
-    }' \
-    --description "Triggers Lambda on pipeline failure" \
-    --role-arn "arn:aws:iam::908027384199:role/EventBridgeRole"
-
-
-Attach the Lambda Function as a Target
-aws events put-targets \
-    --rule PipelineFailureRule \
-    --targets '[
-        {
-            "Id": "LambdaTarget",
-            "Arn": "arn:aws:lambda:eu-west-2:908027384199:function:PipelineFailureHandlerEventBidge"
-        }
-    ]'
-
-aws events put-targets \
-    --rule "PipelineFailureRule" \
-    --targets '[
-        {
-            "Id": "LambdaTarget",
-            "Arn": "arn:aws:lambda:eu-west-2:908027384199:function:PipelineFailureHandlerEventBidge"
-        }
-    ]'
-
-Grant EventBridge Permission to Invoke the Lambda
-aws lambda add-permission \
-    --function-name "PipelineFailureHandlerEventBidge" \
-    --statement-id "AllowEventBridgeInvocation" \
-    --action "lambda:InvokeFunction" \
-    --principal "events.amazonaws.com" \
-    --source-arn "arn:aws:events:eu-west-2:908027384199:rule/PipelineFailureRule"
-
-aws events list-event-sources
-aws events list-event-buses
-aws events describe-rule --name PipelineFailureRule
-aws events list-targets-by-rule --rule PipelineFailureRule
-aws lambda get-policy --function-name PipelineFailureHandlerEventBidge
-
-
-Test EventBridge
-aws events put-events \
-  --entries '[
-    {
-      "Source": "myapp.events",
-      "DetailType": "CodePipeline Pipeline Execution State Change",
-      "Detail": "{\"state\": \"FAILED\", \"pipeline\": \"MyTestPipeline\"}",
-      "EventBusName": "default"
-    }
-  ]'
-
-
-aws iam create-role \
-  --role-name CodePipelineRole \
-  --assume-role-policy-document file://codepipeline-trust-policy.json
-
-aws iam attach-role-policy \
-    --role-name CodePipelineRole \
-    --policy-arn arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole
-
-
-- Set up a CodeBuild project for build and test
-- Create a CodeDeploy application and a deployment group
-- Create the Pipeline 
+##########
+CodeBuild
+##########
+- create CodeBuild build project
+- create CodeBuild test project
+- create a CodeDeploy application
+- create a deployment group
+- create pipeline.json
+- deploy pipeline
     aws codepipeline create-pipeline --cli-input-json file://pipeline.json
-
-
-4. Verify and Trigger the Pipeline
-Once created:
-
-The pipeline should automatically trigger and run through the stages.
-Check the status via the AWS Management Console or CLI:
-bash
-Copy
-Edit
-aws codepipeline get-pipeline-state --name MyPipeline
-5. Adjust IAM Roles
-Ensure the IAM roles (for CodePipeline, CodeBuild, and CodeDeploy) have sufficient permissions:
-
-CodePipeline role should allow access to S3, GitHub, CodeBuild, and CodeDeploy.
-CodeBuild roles should allow access to S3 artifacts and other resources.
-CodeDeploy roles should allow deploying to the target instances.
+    aws codepipeline get-pipeline-state --name flask-memcached-pipeline
 
 
 

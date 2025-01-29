@@ -1,6 +1,6 @@
 {
   "pipeline": {
-    "name": "MyPipeline",
+    "name": "flask-memcached-pipeline",
     "roleArn": "arn:aws:iam::908027384199:role/CodePipelineRole",
     "artifactStore": {
       "type": "S3",
@@ -23,7 +23,7 @@
               "Owner": "dopc02devops",
               "Repo": "flask-memcached-codecommit",
               "Branch": "main",
-              "OAuthToken": ""
+              "OAuthToken": "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"
             },
             "outputArtifacts": [
               {
@@ -129,10 +129,7 @@
             },
             "inputArtifacts": [
               {
-                "name": "BuildOutput"
-              },
-              {
-                "name": "TestOutput"
+                "name": "SourceOutput"
               }
             ],
             "region": "eu-west-2"
